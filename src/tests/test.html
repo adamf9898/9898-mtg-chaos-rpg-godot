@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MTG Chaos RPG — Tests</title>
+  <style>
+    body { font-family: monospace; background: #1a1a2e; color: #e6edf3; padding: 2rem; }
+    h1 { margin-bottom: 1rem; }
+    .pass { color: #3fb950; }
+    .fail { color: #f85149; }
+    .suite { margin: 1rem 0; padding: 0.5rem; border-left: 3px solid #30363d; }
+    .suite h2 { font-size: 1rem; margin-bottom: 0.5rem; }
+    .result { padding: 0.15rem 0; }
+    #summary { margin-top: 1.5rem; font-size: 1.2rem; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>🧪 MTG Chaos RPG — Unit Tests</h1>
+  <div id="output"></div>
+  <div id="summary"></div>
+
+  <script type="module">
+    import { CardData } from '../js/game/CardData.js';
+    import { Champion } from '../js/game/Champion.js';
+    import * as ChaosFormat from '../js/game/ChaosFormat.js';
+    import { DeckBuilder } from '../js/game/DeckBuilder.js';
+    import { GameManager, Phase } from '../js/game/GameManager.js';
+    import { EventEmitter } from '../js/EventEmitter.js';
+
+    const output = document.getElementById('output');
+    const summaryEl = document.getElementById('summary');
+    let totalPass = 0;
+    let totalFail = 0;
+
+    function suite(name) {
+      const div = document.createElement('div');
+      div.className = 'suite';
+      div.innerHTML = `<h2>${name}</h2>`;
+      output.appendChild(div);
+      return div;
+    }
+
+    function test(suiteEl, name, fn) {
+      const result = document.createElement('div');
+      result.className = 'result';
+      try {
+        fn();
+        result.innerHTML = `<span class="pass">✓</span> ${name}`;
+        totalPass++;
+      } catch (e) {
+        result.innerHTML = `<span class="fail">✗</span> ${name} — ${e.message}`;
+        totalFail++;
+      }
+      suiteEl.appendChild(result);
+    }
+
+    function assert(condition, message = 'Assertion failed') {
+      if (!condition) throw new Error(message);
+    }
+
+    function assertEqual(actual, expected, label = '') {
+      if (actual !== expected) {
+        throw new Error(`${label} Expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+      }
+    }
+
+    // ── CardData Tests ──────────────────────────────────────────────────
+    const s1 = suite('CardData');
+
+    test(s1, 'fromScryfallJson populates fields', () => {
+      const json = {
+        id: 'abc123', oracle_id: 'oracle1', name: 'Lightning Bolt',
+        set: 'lea', mana_cost: '{R}', cmc: 1, type_line: 'Instant',
+        oracle_text: 'Deal 3 damage.', colors: ['R'], color_identity: ['R'],
+        image_uris: { normal: 'https://example.com/img.jpg', small: 'https://example.com/sm.jpg' }
+      };
+      const card = CardData.fromScryfallJson(json);
+      assertEqual(card.name, 'Lightning Bolt', 'name');
+      assertEqual(card.cmc, 1, 'cmc');
+      assertEqual(card.isSpell(), true, 'isSpell');
+      assertEqual(card.isCreature(), false, 'isCreature');
+      assertEqual(card.isLand(), false, 'isLand');
+    });
+
+    test(s1, 'isCreature detects creature type', () => {
+      const card = new CardData();
+      card.typeLine = 'Creature — Human Wizard';
+      assert(card.isCreature());
+    });
+
+    test(s1, 'isLand detects land type', () => {
+      const card = new CardData();
+      card.typeLine = 'Basic Land — Mountain';
+      assert(card.isLand());
+    });
+
+    test(s1, 'duplicate creates independent copy', () => {
+      const card = new CardData();
+      card.name = 'Test Card';
+      card.colors = ['R', 'U'];
+      const copy = card.duplicate();
+      copy.name = 'Modified';
+      copy.colors.push('G');
+      assertEqual(card.name, 'Test Card', 'original unchanged');
+      assertEqual(card.colors.length, 2, 'original colors unchanged');
+    });
+
+    // ── Champion Tests ──────────────────────────────────────────────────
+    const s2 = suite('Champion');
+
+    test(s2, 'starts with correct defaults', () => {
+      const champ = new Champion('Alice');
+      assertEqual(champ.hp, 20, 'hp');
+      assertEqual(champ.maxHp, 20, 'maxHp');
+      assertEqual(champ.attack, 2, 'attack');
+      assert(champ.isAlive(), 'isAlive');
+    });
+
+    test(s2, 'takeDamage reduces HP', () => {
+      const champ = new Champion('Bob');
+      champ.takeDamage(5);
+      assertEqual(champ.hp, 15, 'hp after damage');
+    });
+
+    test(s2, 'takeDamage does not go below 0', () => {
+      const champ = new Champion('Eve');
+      champ.takeDamage(999);
+      assertEqual(champ.hp, 0, 'hp capped at 0');
+      assert(!champ.isAlive(), 'not alive');
+    });
+
+    test(s2, 'heal restores HP up to maxHp', () => {
+      const champ = new Champion('Carl');
+      champ.takeDamage(10);
+      champ.heal(5);
+      assertEqual(champ.hp, 15, 'healed');
+      champ.heal(100);
+      assertEqual(champ.hp, 20, 'capped at maxHp');
+    });
+
+    // ── ChaosFormat Tests ───────────────────────────────────────────────
+    const s3 = suite('ChaosFormat');
+
+    test(s3, 'has 20 chaos effects', () => {
+      assertEqual(ChaosFormat.CHAOS_EFFECTS.length, 20, 'effect count');
+    });
+
+    test(s3, 'shuffleDeck randomizes order', () => {
+      const arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+      const original = [...arr];
+      ChaosFormat.shuffleDeck(arr);
+      assertEqual(arr.length, 10, 'same length');
+      // Verify all elements are still present (order may vary)
+      const sorted = [...arr].sort((a, b) => a - b);
+      assert(sorted.every((v, i) => v === original.sort((a, b) => a - b)[i]), 'all elements preserved');
+    });
+
+    test(s3, 'drawCards moves cards from deck to hand', () => {
+      const deck = [1, 2, 3, 4, 5];
+      const hand = [];
+      const drawn = ChaosFormat.drawCards(deck, hand, 3);
+      assertEqual(drawn, 3, 'drew 3');
+      assertEqual(hand.length, 3, 'hand has 3');
+      assertEqual(deck.length, 2, 'deck has 2');
+    });
+
+    test(s3, 'drawCards handles empty deck', () => {
+      const deck = [];
+      const hand = [];
+      const drawn = ChaosFormat.drawCards(deck, hand, 5);
+      assertEqual(drawn, 0, 'drew 0');
+    });
+
+    test(s3, 'isDeckLegal validates size', () => {
+      const smallDeck = Array.from({ length: 10 }, () => {
+        const c = new CardData(); c.name = 'X'; c.typeLine = 'Land'; return c;
+      });
+      assert(!ChaosFormat.isDeckLegal(smallDeck), 'too small');
+
+      const validDeck = Array.from({ length: 40 }, () => {
+        const c = new CardData(); c.name = `Card${Math.random()}`; c.typeLine = 'Land'; return c;
+      });
+      assert(ChaosFormat.isDeckLegal(validDeck), 'valid size');
+    });
+
+    test(s3, 'isDeckLegal enforces 4-copy rule', () => {
+      const deck = [];
+      for (let i = 0; i < 35; i++) {
+        const c = new CardData(); c.name = `Unique${i}`; c.typeLine = 'Land'; deck.push(c);
+      }
+      // Add 5 copies of a non-land
+      for (let i = 0; i < 5; i++) {
+        const c = new CardData(); c.name = 'Lightning Bolt'; c.typeLine = 'Instant'; deck.push(c);
+      }
+      assert(!ChaosFormat.isDeckLegal(deck), 'too many copies');
+    });
+
+    test(s3, 'assignChaosEffect sets effect and value', () => {
+      const card = new CardData();
+      card.name = 'Test'; card.cmc = 3; card.colors = ['R', 'U'];
+      card.typeLine = 'Creature'; card.power = '4'; card.toughness = '3';
+      ChaosFormat.assignChaosEffect(card);
+      assert(card.chaosEffect.length > 0, 'has effect');
+      assert(card.chaosValue > 0, 'has value');
+    });
+
+    // ── DeckBuilder Tests ───────────────────────────────────────────────
+    const s4 = suite('DeckBuilder');
+
+    test(s4, 'addCard adds cards', () => {
+      const db = new DeckBuilder();
+      const card = new CardData();
+      card.name = 'Mountain'; card.typeLine = 'Basic Land — Mountain';
+      assert(db.addCard(card), 'added');
+      assertEqual(db.size(), 1, 'size');
+    });
+
+    test(s4, 'addCard enforces 4-copy limit for non-lands', () => {
+      const db = new DeckBuilder();
+      for (let i = 0; i < 4; i++) {
+        const c = new CardData(); c.name = 'Bolt'; c.typeLine = 'Instant';
+        assert(db.addCard(c), `added #${i + 1}`);
+      }
+      const c5 = new CardData(); c5.name = 'Bolt'; c5.typeLine = 'Instant';
+      assert(!db.addCard(c5), 'rejected 5th copy');
+    });
+
+    test(s4, 'removeCard removes a copy', () => {
+      const db = new DeckBuilder();
+      const c1 = new CardData(); c1.name = 'Bolt'; c1.typeLine = 'Instant';
+      const c2 = new CardData(); c2.name = 'Bolt'; c2.typeLine = 'Instant';
+      db.addCard(c1);
+      db.addCard(c2);
+      assert(db.removeCard(c1), 'removed');
+      assertEqual(db.size(), 1, 'size after remove');
+    });
+
+    test(s4, 'clear empties the deck', () => {
+      const db = new DeckBuilder();
+      const c = new CardData(); c.name = 'X'; c.typeLine = 'Land';
+      db.addCard(c);
+      db.clear();
+      assertEqual(db.size(), 0, 'empty');
+    });
+
+    test(s4, 'emits deckChanged event', () => {
+      const db = new DeckBuilder();
+      let emitted = false;
+      db.on('deckChanged', () => { emitted = true; });
+      const c = new CardData(); c.name = 'X'; c.typeLine = 'Land';
+      db.addCard(c);
+      assert(emitted, 'event emitted');
+    });
+
+    // ── GameManager Tests ───────────────────────────────────────────────
+    const s5 = suite('GameManager');
+
+    test(s5, 'initializes with correct state', () => {
+      const gm = new GameManager();
+      assertEqual(gm.currentPhase, Phase.DECK_BUILD, 'phase');
+      assertEqual(gm.champions.length, 2, 'champions');
+      assertEqual(gm.turnNumber, 0, 'turn');
+    });
+
+    test(s5, 'setPlayerName updates champion', () => {
+      const gm = new GameManager();
+      gm.setPlayerName(0, 'Alice');
+      assertEqual(gm.champions[0].playerName, 'Alice');
+    });
+
+    test(s5, 'startGame transitions to mulligan and deals hands', () => {
+      const gm = new GameManager();
+      // Build minimal legal decks
+      for (let p = 0; p < 2; p++) {
+        const deck = [];
+        for (let i = 0; i < 40; i++) {
+          const c = new CardData(); c.name = `Card${i}`; c.typeLine = 'Creature';
+          c.power = '1'; c.toughness = '1'; c.chaosEffect = 'Test'; deck.push(c);
+        }
+        gm.loadDeck(p, deck);
+      }
+      gm.startGame();
+      assertEqual(gm.currentPhase, Phase.MULLIGAN, 'phase');
+      assertEqual(gm.hands[0].length, 7, 'player hand');
+      assertEqual(gm.hands[1].length, 7, 'opponent hand');
+    });
+
+    // ── EventEmitter Tests ──────────────────────────────────────────────
+    const s6 = suite('EventEmitter');
+
+    test(s6, 'on and emit work', () => {
+      const ee = new EventEmitter();
+      let value = 0;
+      ee.on('test', (v) => { value = v; });
+      ee.emit('test', 42);
+      assertEqual(value, 42);
+    });
+
+    test(s6, 'off removes listener', () => {
+      const ee = new EventEmitter();
+      let count = 0;
+      const fn = () => { count++; };
+      ee.on('test', fn);
+      ee.emit('test');
+      ee.off('test', fn);
+      ee.emit('test');
+      assertEqual(count, 1, 'called once');
+    });
+
+    // ── Summary ─────────────────────────────────────────────────────────
+    const total = totalPass + totalFail;
+    summaryEl.innerHTML = totalFail === 0
+      ? `<span class="pass">All ${total} tests passed ✓</span>`
+      : `<span class="fail">${totalFail} of ${total} tests failed ✗</span>`;
+  </script>
+</body>
+</html>
