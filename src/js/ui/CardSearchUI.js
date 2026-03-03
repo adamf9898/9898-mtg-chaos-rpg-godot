@@ -112,8 +112,8 @@ export class CardSearchUI {
     previewEl.classList.remove('hidden');
     previewEl.innerHTML = `
       <div class="preview-content">
-        ${card.imageUriNormal
-          ? `<img src="${this._escapeHtml(card.imageUriNormal)}" alt="${this._escapeHtml(card.name)}" class="preview-image" />`
+        ${card.imageUriNormal && this._sanitizeUrl(card.imageUriNormal)
+          ? `<img src="${this._sanitizeUrl(card.imageUriNormal)}" alt="${this._escapeHtml(card.name)}" class="preview-image" />`
           : '<div class="preview-placeholder">No image available</div>'
         }
         <div class="preview-details">
@@ -138,5 +138,15 @@ export class CardSearchUI {
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
+  }
+
+  /** Validate that a URL uses a safe protocol. */
+  _sanitizeUrl(url) {
+    if (!url) return '';
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol === 'https:' || parsed.protocol === 'http:') return url;
+    } catch { /* invalid URL */ }
+    return '';
   }
 }

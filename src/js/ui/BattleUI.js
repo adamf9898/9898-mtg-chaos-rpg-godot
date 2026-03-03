@@ -131,8 +131,8 @@ export class BattleUI {
       // Show actual cards for the player
       el.innerHTML = hand.map((card, i) => `
         <div class="card card-in-hand" data-index="${i}" title="${this._escapeHtml(card.toString())}">
-          ${card.imageUriSmall
-            ? `<img src="${this._escapeHtml(card.imageUriSmall)}" alt="${this._escapeHtml(card.name)}" />`
+          ${card.imageUriSmall && this._sanitizeUrl(card.imageUriSmall)
+            ? `<img src="${this._sanitizeUrl(card.imageUriSmall)}" alt="${this._escapeHtml(card.name)}" />`
             : `<div class="card-text">
                 <div class="card-name-small">${this._escapeHtml(card.name)}</div>
                 <div class="card-mana-small">${card.manaCost}</div>
@@ -222,5 +222,15 @@ export class BattleUI {
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
+  }
+
+  /** Validate that a URL uses a safe protocol. */
+  _sanitizeUrl(url) {
+    if (!url) return '';
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol === 'https:' || parsed.protocol === 'http:') return url;
+    } catch { /* invalid URL */ }
+    return '';
   }
 }

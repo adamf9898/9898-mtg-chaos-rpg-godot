@@ -97,10 +97,13 @@ export class GameUI {
       content.innerHTML = `
         <div class="error-screen">
           <h2>❌ Error building opponent deck</h2>
-          <p>${err.message}</p>
-          <button class="btn btn-primary" onclick="window.location.reload()">Try Again</button>
+          <p>${this._escapeHtml(err.message)}</p>
+          <button class="btn btn-primary" id="retry-btn">Try Again</button>
         </div>
       `;
+      content.querySelector('#retry-btn').addEventListener('click', () => {
+        window.location.reload();
+      });
     }
   }
 
@@ -169,12 +172,12 @@ export class GameUI {
     const hand = this.gameManager.hands[0];
     handEl.innerHTML = hand.map(card => `
       <div class="mulligan-card">
-        ${card.imageUriSmall
-          ? `<img src="${card.imageUriSmall}" alt="${card.name}" />`
+        ${card.imageUriSmall && this._sanitizeUrl(card.imageUriSmall)
+          ? `<img src="${this._sanitizeUrl(card.imageUriSmall)}" alt="${this._escapeHtml(card.name)}" />`
           : `<div class="card-text-preview">
-              <strong>${card.name}</strong><br/>
-              ${card.manaCost}<br/>
-              ${card.typeLine}
+              <strong>${this._escapeHtml(card.name)}</strong><br/>
+              ${this._escapeHtml(card.manaCost)}<br/>
+              ${this._escapeHtml(card.typeLine)}
             </div>`
         }
       </div>
@@ -189,5 +192,22 @@ export class GameUI {
       this.gameManager
     );
     this.battleUI.refresh();
+  }
+
+  _escapeHtml(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  /** Validate that a URL uses a safe protocol. */
+  _sanitizeUrl(url) {
+    if (!url) return '';
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol === 'https:' || parsed.protocol === 'http:') return url;
+    } catch { /* invalid URL */ }
+    return '';
   }
 }

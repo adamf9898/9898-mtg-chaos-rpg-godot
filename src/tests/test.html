@@ -151,9 +151,9 @@
       const original = [...arr];
       ChaosFormat.shuffleDeck(arr);
       assertEqual(arr.length, 10, 'same length');
-      // Very unlikely to stay in exact same order
-      const same = arr.every((v, i) => v === original[i]);
-      // Allow it to pass even if shuffle doesn't change order (rare but possible)
+      // Verify all elements are still present (order may vary)
+      const sorted = [...arr].sort((a, b) => a - b);
+      assert(sorted.every((v, i) => v === original.sort((a, b) => a - b)[i]), 'all elements preserved');
     });
 
     test(s3, 'drawCards moves cards from deck to hand', () => {
