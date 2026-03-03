@@ -1,0 +1,35 @@
+[gd_scene load_steps=2 format=3 uid="uid://card_search_scene"]
+
+[ext_resource type="Script" path="res://scripts/CardSearch.gd" id="1_cardsearch"]
+
+[node name="CardSearch" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_cardsearch")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+
+[node name="StatusLabel" type="Label" parent="VBoxContainer"]
+text = "Enter a card name or Scryfall query and press Search."
+autowrap_mode = 3
+
+[node name="SearchInput" type="LineEdit" parent="VBoxContainer"]
+placeholder_text = "e.g. \"Lightning Bolt\" or \"t:creature c:red cmc<=3\""
+size_flags_horizontal = 3
+
+[node name="SearchButton" type="Button" parent="VBoxContainer"]
+text = "Search Scryfall"
+
+[node name="ResultsList" type="ItemList" parent="VBoxContainer"]
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 300)
+
+[node name="AddToDeckButton" type="Button" parent="VBoxContainer"]
+text = "Add Selected Card to Deck"
+disabled = true
