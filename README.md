@@ -1,118 +1,108 @@
-# MTG Chaos RPG
-
-A custom **Magic: The Gathering** format built with [Godot 4](https://godotengine.org/) and powered by the [Scryfall API](https://scryfall.com/docs/api).
-
----
+# GitHub Copilot Instructions for 9898-MTG-Chaos-RPG
 
 ## Overview
 
-**MTG Chaos RPG** is a custom MTG format that adds RPG-style elements to your favourite card game:
+This repository contains the 9898-MTG-Chaos-RPG project, a Magic: The Gathering-inspired RPG built with Godot 4 and powered by the Scryfall API.
 
-- **Champion** – Each player controls a persistent hero with HP and Attack stats.
-- **Chaos Effects** – Every card that enters play triggers a random Chaos Effect, making no two games identical.
-- **Scryfall Integration** – Search the entire MTG card database in-game using the Scryfall API to build your deck on the fly.
+## Copilot Usage
 
-### Format Rules
+GitHub Copilot assists with:
 
-| Rule | Value |
-|------|-------|
-| Minimum deck size | 40 cards |
-| Maximum deck size | 60 cards |
-| Opening hand | 7 cards |
-| Maximum copies of any non-basic land | 4 |
-| Champion starting HP | 20 |
-| Champion starting Attack | 2 |
-| Victory condition | Reduce opposing Champion's HP to 0 |
+- AI text, image, and chat generation
+- Scryfall API integration
+- Dice rolling, wheel spinning, coin flipping
+- Dynamic content generation
+- Modular workflow automation
+- Game design, rule implementation, and world building
 
----
+## Workflow Phases
 
-## Project Structure
+1. **Analysis & Research:** Gather insights and analyze requirements.
+2. **Summarization & Scaffolding:** Structure findings and create foundations.
+3. **Planning & Building:** Outline and construct solutions.
+4. **Implementation & Creation:** Develop features and content.
+5. **Discussion & Reflection:** Evaluate and refine collaboratively.
+6. **Refactoring & Improvement:** Optimize and fix outputs.
+7. **Generation & Sharing:** Disseminate results and foster collaboration.
+8. **Exploration & Management:** Expand capabilities and coordinate tasks.
+9. **Quality Control:** Handle adjustments and assure quality.
 
-```
-project.godot            ← Godot 4 project file
-scenes/
-  Main.tscn              ← Entry-point scene
-  ui/
-    CardSearch.tscn      ← Scryfall search & deck-builder UI
-scripts/
-  autoloads/
-    ScryfallAPI.gd       ← Scryfall REST API singleton (HTTPRequest wrapper)
-    GameManager.gd       ← Match state machine (phases, turns, champions)
-  CardData.gd            ← MTG card resource (populated from Scryfall JSON)
-  ChaosFormat.gd         ← Format rules, chaos-effect pool, deck validation
-  DeckBuilder.gd         ← Deck management (add/remove/validate)
-  CardSearch.gd          ← UI controller for the card search panel
-  Main.gd                ← Root scene script
-```
+## Principles
 
----
+- Cyclical, iterative improvement
+- Modular and flexible task design
+- Automation of repetitive tasks
+- Collaboration and documentation
+- Regular performance review
 
-## Getting Started
+## Coding Guidelines
 
-### Prerequisites
+- Follow Godot 4 style (4 spaces, descriptive names, comments)
+- Write unit tests for new code
+- Refactor for readability and performance
 
-- [Godot 4.2+](https://godotengine.org/download)
+## Branching Model
 
-### Running the Project
+- `main`: Production-ready code
+- `feature/*`: New features
+- `bugfix/*`: Bug fixes
+- `release/*`: Release preparation
 
-1. Clone this repository.
-2. Open Godot 4, click **Import**, and select the `project.godot` file.
-3. Click **Play** (F5) to launch the game.
+## Commit Format
 
-> **Note:** The Scryfall API is queried over HTTPS. Ensure your device has an active internet connection when using the card-search features.
+- Use concise, descriptive messages
+- Format: `<type>: <short description>`
+  - Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
+- Example: `feat: add dice rolling mechanic`
+- Reference issues or PRs when relevant (e.g., `fix: resolve #42`)
 
----
+## Copilot Prompts & Examples
 
-## Scryfall API
+### Common Prompts
 
-All card data is fetched live from the [Scryfall API](https://scryfall.com/docs/api) via the `ScryfallAPI` autoload singleton.
+- "Generate a Godot 4 script for a turn-based combat system."
+- "Integrate Scryfall API to fetch card data."
+- "Create a dice rolling mechanic with animation."
+- "Refactor this GDScript for readability and performance."
+- "Write unit tests for the card draw function."
+- "Summarize the current game design and suggest improvements."
+- "Automate the creation of new NPCs with random attributes."
+- "Document the workflow for adding new spells."
 
-### Available Methods
+### Example Workflow
 
-```gdscript
-# Search for cards using Scryfall's full query syntax
-ScryfallAPI.search_cards("t:creature c:red cmc<=3")
+1. **Feature Request:**  
+  _Prompt:_ "Add a coin flip mechanic to the game."  
+  _Copilot Output:_ Generates GDScript for coin flipping, including animation and result handling.
 
-# Look up a card by exact name
-ScryfallAPI.get_card_by_name("Lightning Bolt")
+2. **Refactoring:**  
+  _Prompt:_ "Optimize the card search function for speed."  
+  _Copilot Output:_ Refactors code, adds comments, and suggests performance improvements.
 
-# Fuzzy name match
-ScryfallAPI.get_card_by_name("lightning bolt", true)
+3. **Testing:**  
+  _Prompt:_ "Write unit tests for the dice rolling logic."  
+  _Copilot Output:_ Provides test cases using Godot's testing framework.
 
-# Fetch a random card (optionally filtered)
-ScryfallAPI.get_random_card()
-ScryfallAPI.get_random_card("t:dragon")
+## Best Practices
 
-# Fetch by Scryfall UUID
-ScryfallAPI.get_card_by_id("e3285e6b-3e79-4d7c-bf96-d920f973b122")
-```
+- Always review Copilot-generated code for accuracy and security.
+- Use Copilot to automate repetitive tasks and accelerate prototyping.
+- Document Copilot-assisted changes in commit messages.
+- Collaborate by sharing Copilot prompts and results in PRs or issues.
 
-### Signals
+## Troubleshooting
 
-```gdscript
-ScryfallAPI.search_completed(cards: Array)   # Array[CardData]
-ScryfallAPI.card_found(card: CardData)
-ScryfallAPI.random_card_fetched(card: CardData)
-ScryfallAPI.request_failed(error_message: String)
-```
+- If Copilot output is unclear, rephrase the prompt or provide more context.
+- For integration issues, consult Godot and Scryfall API documentation.
+- Report Copilot bugs or suggestions via GitHub Issues.
 
----
+## Resources
 
-## Custom Format — Chaos Effects
-
-When a card enters play, one of the following **20 Chaos Effects** triggers at random:
-
-- Double Strike, Arcane Surge, Mana Void, Time Warp, Cursed Aura, Blessed Aura,
-  Chaos Rift, Wild Growth, Dark Bargain, Spectral Echo, Temporal Flux, Mana Flood,
-  Reckless Charge, Arcane Mirror, Pandemonium, Luck of the Draw, Rally, Hex,
-  Inspiration, Entropy.
-
-Each card also receives a **Chaos Value** — a numeric score based on CMC, colours, and combat stats — used by future format mechanics.
+- [Godot 4 Documentation](https://docs.godotengine.org/en/stable/)
+- [Scryfall API Docs](https://scryfall.com/docs/api)
+- [GitHub Copilot Documentation](https://docs.github.com/en/copilot)
+- [Project Wiki](./wiki)
 
 ---
 
-## License
-
-This project is released under the [MIT License](LICENSE).
-
-Magic: The Gathering card data is provided by [Scryfall](https://scryfall.com) under their [terms of service](https://scryfall.com/docs/api/ethics). This project is not affiliated with or endorsed by Wizards of the Coast.
+_This guide ensures effective use of GitHub Copilot for the 9898-MTG-Chaos-RPG project. For questions or improvements, open an issue or start a discussion._
