@@ -307,6 +307,29 @@ h3 { font-size: 1.125rem; margin-bottom: 0.5rem; }
 }
 .error-screen h2 { color: var(--accent-red); }
 
+/* ── Progress bar (loading) ─────────────────────────────────────────────── */
+.progress-bar-container {
+  width: 300px;
+  height: 12px;
+  background: var(--bg-primary);
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 1rem auto;
+  border: 1px solid var(--border-color);
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--accent-blue);
+  transition: width 0.4s ease;
+}
+
+.loading-percent {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent-blue);
+}
+
 /* ── Mulligan Screen ────────────────────────────────────────────────────── */
 .mulligan-screen {
   text-align: center;
@@ -566,6 +589,22 @@ h3 { font-size: 1.125rem; margin-bottom: 0.5rem; }
 .game-over-content h2 {
   color: var(--accent-gold);
   margin-bottom: 1.5rem;
+}
+
+.game-over-stats {
+  text-align: left;
+  margin: 1rem auto 1.5rem;
+  padding: 1rem;
+  background: var(--bg-primary);
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+  max-width: 300px;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.game-over-stats p {
+  margin: 0.3rem 0;
 }
 
 /* ── Scrollbar styling ──────────────────────────────────────────────────── */

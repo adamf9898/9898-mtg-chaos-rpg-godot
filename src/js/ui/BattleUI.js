@@ -202,12 +202,20 @@ export class BattleUI {
 
   _showGameOver(winnerIndex) {
     const winner = this.gm.champions[winnerIndex];
+    const stats = this.gm.stats;
     const overlay = document.createElement('div');
     overlay.className = 'game-over-overlay';
     overlay.innerHTML = `
       <div class="game-over-content">
         <h1>🏆 Game Over!</h1>
         <h2>${this._escapeHtml(winner.playerName)} Wins!</h2>
+        <div class="game-over-stats">
+          <p>Games Played: ${stats.gamesPlayed}</p>
+          <p>Wins: ${stats.wins} | Losses: ${stats.losses}</p>
+          <p>Win Streak: ${stats.winStreak} | Best: ${stats.bestWinStreak}</p>
+          <p>Total Damage Dealt: ${stats.totalDamageDealt}</p>
+          <p>Total Cards Played: ${stats.totalCardsPlayed}</p>
+        </div>
         <button class="btn btn-primary" id="new-game-btn">New Game</button>
       </div>
     `;

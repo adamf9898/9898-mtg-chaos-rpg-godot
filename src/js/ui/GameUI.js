@@ -85,6 +85,10 @@ export class GameUI {
       <div class="loading-screen">
         <h2>⏳ Preparing opponent deck…</h2>
         <p id="loading-status">Fetching random cards from Scryfall…</p>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" id="loading-progress" style="width: 0%"></div>
+        </div>
+        <p id="loading-percent" class="loading-percent">0%</p>
         <div class="spinner"></div>
       </div>
     `;
@@ -113,6 +117,8 @@ export class GameUI {
    */
   async _buildOpponentDeck() {
     const statusEl = document.getElementById('loading-status');
+    const progressEl = document.getElementById('loading-progress');
+    const percentEl = document.getElementById('loading-percent');
     const opponentBuilder = new DeckBuilder();
 
     // Search for creatures and spells to build a deck
@@ -120,7 +126,10 @@ export class GameUI {
     const cardsPerQuery = [20, 8, 7, 5];
 
     for (let q = 0; q < queries.length; q++) {
+      const pct = Math.round(((q + 1) / queries.length) * 100);
       if (statusEl) statusEl.textContent = `Searching: ${queries[q]}…`;
+      if (progressEl) progressEl.style.width = `${pct}%`;
+      if (percentEl) percentEl.textContent = `${pct}%`;
       try {
         const result = await ScryfallAPI.searchCards(queries[q]);
         const shuffled = [...result.cards].sort(() => Math.random() - 0.5);
@@ -133,6 +142,10 @@ export class GameUI {
         // If a specific search fails, continue with others
       }
     }
+
+    if (progressEl) progressEl.style.width = '100%';
+    if (percentEl) percentEl.textContent = '100%';
+    if (statusEl) statusEl.textContent = 'Opponent deck ready!';
 
     return opponentBuilder.finalizeForGame();
   }
