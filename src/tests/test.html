@@ -26,6 +26,7 @@
     import * as ChaosFormat from '../js/game/ChaosFormat.js';
     import { DeckBuilder } from '../js/game/DeckBuilder.js';
     import { GameManager, Phase } from '../js/game/GameManager.js';
+    import { GameStats } from '../js/game/GameStats.js';
     import { EventEmitter } from '../js/EventEmitter.js';
 
     const output = document.getElementById('output');
@@ -306,6 +307,109 @@
       ee.off('test', fn);
       ee.emit('test');
       assertEqual(count, 1, 'called once');
+    });
+
+    // ── GameStats Tests ─────────────────────────────────────────────────
+    const s7 = suite('GameStats');
+
+    test(s7, 'starts with zeros', () => {
+      const stats = new GameStats();
+      assertEqual(stats.gamesPlayed, 0, 'gamesPlayed');
+      assertEqual(stats.wins, 0, 'wins');
+      assertEqual(stats.losses, 0, 'losses');
+      assertEqual(stats.winStreak, 0, 'winStreak');
+      assertEqual(stats.bestWinStreak, 0, 'bestWinStreak');
+      assertEqual(stats.totalDamageDealt, 0, 'totalDamageDealt');
+      assertEqual(stats.totalCardsPlayed, 0, 'totalCardsPlayed');
+    });
+
+    test(s7, 'recordGame tracks wins and losses', () => {
+      const stats = new GameStats();
+      stats.recordGame(true);
+      assertEqual(stats.gamesPlayed, 1, 'gamesPlayed');
+      assertEqual(stats.wins, 1, 'wins');
+      assertEqual(stats.losses, 0, 'losses');
+      stats.recordGame(false);
+      assertEqual(stats.gamesPlayed, 2, 'gamesPlayed');
+      assertEqual(stats.wins, 1, 'wins');
+      assertEqual(stats.losses, 1, 'losses');
+    });
+
+    test(s7, 'tracks win streaks correctly', () => {
+      const stats = new GameStats();
+      stats.recordGame(true);
+      stats.recordGame(true);
+      stats.recordGame(true);
+      assertEqual(stats.winStreak, 3, 'winStreak');
+      assertEqual(stats.bestWinStreak, 3, 'bestWinStreak');
+      stats.recordGame(false);
+      assertEqual(stats.winStreak, 0, 'winStreak reset');
+      assertEqual(stats.bestWinStreak, 3, 'bestWinStreak preserved');
+      stats.recordGame(true);
+      assertEqual(stats.winStreak, 1, 'new streak');
+      assertEqual(stats.bestWinStreak, 3, 'bestWinStreak unchanged');
+    });
+
+    test(s7, 'recordDamage accumulates', () => {
+      const stats = new GameStats();
+      stats.recordDamage(5);
+      stats.recordDamage(3);
+      assertEqual(stats.totalDamageDealt, 8, 'damage');
+    });
+
+    test(s7, 'recordCardPlayed increments', () => {
+      const stats = new GameStats();
+      stats.recordCardPlayed();
+      stats.recordCardPlayed();
+      assertEqual(stats.totalCardsPlayed, 2, 'cards');
+    });
+
+    test(s7, 'toString produces a summary', () => {
+      const stats = new GameStats();
+      stats.recordGame(true);
+      const str = stats.toString();
+      assert(str.includes('Wins: 1'), 'includes wins');
+      assert(str.includes('Games: 1'), 'includes games');
+    });
+
+    // ── GameManager Stats Integration Tests ─────────────────────────────
+    const s8 = suite('GameManager Stats & AI');
+
+    test(s8, 'stats property exists on GameManager', () => {
+      const gm = new GameManager();
+      assert(gm.stats instanceof GameStats, 'stats is GameStats');
+    });
+
+    test(s8, 'playCard records card stat for player 0', () => {
+      const gm = new GameManager();
+      for (let p = 0; p < 2; p++) {
+        const deck = [];
+        for (let i = 0; i < 40; i++) {
+          const c = new CardData(); c.name = `Card${i}`; c.typeLine = 'Creature';
+          c.power = '1'; c.toughness = '1'; c.chaosEffect = 'Test'; deck.push(c);
+        }
+        gm.loadDeck(p, deck);
+      }
+      gm.startGame();
+      gm.beginMainPhase();
+      gm.playCard(0);
+      assertEqual(gm.stats.totalCardsPlayed, 1, 'player card tracked');
+    });
+
+    test(s8, 'declareAttack records damage stat for player 0', () => {
+      const gm = new GameManager();
+      for (let p = 0; p < 2; p++) {
+        const deck = [];
+        for (let i = 0; i < 40; i++) {
+          const c = new CardData(); c.name = `Card${i}`; c.typeLine = 'Creature';
+          c.power = '1'; c.toughness = '1'; c.chaosEffect = 'Test'; deck.push(c);
+        }
+        gm.loadDeck(p, deck);
+      }
+      gm.startGame();
+      gm.beginMainPhase();
+      gm.declareAttack();
+      assertEqual(gm.stats.totalDamageDealt, 2, 'damage tracked (default ATK = 2)');
     });
 
     // ── Summary ─────────────────────────────────────────────────────────

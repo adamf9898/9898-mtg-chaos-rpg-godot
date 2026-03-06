@@ -11,6 +11,7 @@
  */
 import { EventEmitter } from '../EventEmitter.js';
 import { Champion } from './Champion.js';
+import { GameStats } from './GameStats.js';
 import * as ChaosFormat from './ChaosFormat.js';
 
 /** @enum {string} */
@@ -21,6 +22,9 @@ export const Phase = {
   COMBAT: 'COMBAT',
   END: 'END',
 };
+
+/** Delay (ms) between AI actions to give the player time to see what happens. */
+const AI_ACTION_DELAY_MS = 800;
 
 export class GameManager extends EventEmitter {
   constructor() {
@@ -43,6 +47,9 @@ export class GameManager extends EventEmitter {
 
     /** @type {string[]} */
     this.gameLog = [];
+
+    /** Session-level statistics for the local player (index 0). */
+    this.stats = new GameStats();
 
     this._resetState();
   }
@@ -155,6 +162,9 @@ export class GameManager extends EventEmitter {
       }
     }
 
+    if (this.currentPlayerIndex === 0) {
+      this.stats.recordCardPlayed();
+    }
     this.emit('cardPlayed', this.currentPlayerIndex, card);
     this._log(`${this.champions[this.currentPlayerIndex].playerName} plays ${card.name}.`);
     return true;
@@ -173,6 +183,9 @@ export class GameManager extends EventEmitter {
     const defender = this.champions[defenderIndex];
 
     defender.takeDamage(attacker.attack);
+    if (this.currentPlayerIndex === 0) {
+      this.stats.recordDamage(attacker.attack);
+    }
     this.emit('championDamaged', defenderIndex, attacker.attack);
     this._log(
       `${attacker.playerName} attacks for ${attacker.attack} damage! ` +
@@ -180,6 +193,7 @@ export class GameManager extends EventEmitter {
     );
 
     if (!defender.isAlive()) {
+      this.stats.recordGame(this.currentPlayerIndex === 0);
       this._setPhase(Phase.END);
       this.emit('gameOver', this.currentPlayerIndex);
       this._log(`🏆 ${attacker.playerName} wins!`);
@@ -201,6 +215,39 @@ export class GameManager extends EventEmitter {
     this._drawForActivePlayer();
     this._log(`--- Turn ${this.turnNumber}: ${this.champions[this.currentPlayerIndex].playerName}'s turn ---`);
     this.emit('turnStarted', this.currentPlayerIndex);
+
+    // If it is now the AI player's turn, run auto-turn after a short delay.
+    if (this.currentPlayerIndex === 1 && this.currentPhase === Phase.MAIN) {
+      this._scheduleAITurn();
+    }
+  }
+
+  // ── AI auto-turn ──────────────────────────────────────────────────────────
+
+  /** Schedule the AI to take its turn after a visible delay. */
+  _scheduleAITurn() {
+    setTimeout(() => this._runAITurn(), AI_ACTION_DELAY_MS);
+  }
+
+  /** Execute a simple AI turn: play one card, then attack or end turn. */
+  _runAITurn() {
+    if (this.currentPhase !== Phase.MAIN || this.currentPlayerIndex !== 1) return;
+
+    // AI plays up to one card from its hand
+    if (this.hands[1].length > 0) {
+      const idx = Math.floor(Math.random() * this.hands[1].length);
+      this.playCard(idx);
+    }
+
+    // AI always declares an attack if possible
+    if (this.currentPhase === Phase.MAIN) {
+      this.declareAttack();
+    }
+
+    // If the game hasn't ended, end the AI turn
+    if (this.currentPhase === Phase.MAIN) {
+      this.endTurn();
+    }
   }
 
   // ── Private helpers ─────────────────────────────────────────────────────────
