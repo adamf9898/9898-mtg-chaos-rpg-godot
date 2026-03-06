@@ -126,7 +126,7 @@ export class GameUI {
     const cardsPerQuery = [20, 8, 7, 5];
 
     for (let q = 0; q < queries.length; q++) {
-      const pct = Math.round(((q) / queries.length) * 100);
+      const pct = Math.round(((q + 1) / queries.length) * 100);
       if (statusEl) statusEl.textContent = `Searching: ${queries[q]}…`;
       if (progressEl) progressEl.style.width = `${pct}%`;
       if (percentEl) percentEl.textContent = `${pct}%`;
